@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>गोकुळ स्पीड प्रो</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        body {
+            margin: 0;
+            padding: 12px;
+            background-color: #0b0e14;
+            color: #ffffff;
+            font-family: system-ui, -apple-system, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            min-height: 100vh;
+        }
+        #user-profile-bar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #161b22;
+            padding: 8px 18px;
+            border-radius: 30px;
+            border: 1px solid #30363d;
+            margin-top: 4px;
+        }
+        #user-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: #f1c40f;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #000;
+            font-size: 20px;
+        }
+        h1 { color: #f1c40f; margin: 4px 0; font-size: 24px; text-align: center; }
+        #status { font-size: 19px; color: #00ffcc; font-weight: bold; min-height: 30px; text-align: center; }
+        #hud { font-size: 16px; margin-bottom: 8px; color: #e6edf3; text-align: center; }
+        
+        .controls-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            width: 100%;
+            max-width: 440px;
+            margin-bottom: 10px;
+        }
+        button {
+            border: none;
+            border-radius: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        .main-btn {
+            background: #f1c40f; color: #000; font-size: 22px;
+            padding: 16px; width: 100%; max-width: 440px; margin-bottom: 10px;
+        }
+        .steer-btn { background: #34495e; color: #fff; font-size: 19px; padding: 18px 8px; }
+        .center-btn { 
+            background: #1f3a52; color: #00ffcc; font-size: 18px; 
+            padding: 16px 8px; grid-column: span 2; 
+            border: 1px solid #00ffcc;
+        }
+        .accel-btn { background: #27ae60; color: #fff; font-size: 19px; padding: 18px 8px; }
+        .horn-btn { 
+            background: #f39c12; color: #000; font-size: 20px; 
+            padding: 18px 8px; border: 2px solid #fff;
+        }
+        .front-brake-btn { background: #c0392b; color: #fff; font-size: 18px; padding: 16px 8px; }
+        .rear-brake-btn { background: #8e44ad; color: #fff; font-size: 18px; padding: 16px 8px; }
+        .breaker-btn { 
+            background: #d35400; color: #fff; font-size: 18px; 
+            padding: 16px 8px; grid-column: span 2; 
+            border: 2px dashed #f39c12;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="user-profile-bar">
+        <div id="user-avatar">G</div>
+        <span id="user-name" style="font-weight: bold; color: #58a6ff; font-size: 18px;">गोकुळ माळी</span>
+    </div>
+
+    <header>
+        <h1>गोकुळ स्पीड प्रो</h1>
+        <div id="status" aria-live="assertive">खेळण्यासाठी खालील बटण दाबा</div>
+        <div id="hud">स्कोअर: <span id="score">0</span> | स्पीड: <span id="speed-meter">60</span> किमी/तास | लेन: <span id="lane-name">मध्यम लेन</span></div>
+    </header>
+
+    <div style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+        <button id="start-btn" class="main-btn" onclick="toggleGame()">गेम सुरू करा</button>
+
+        <div class="controls-grid">
+            <button class="steer-btn" onclick="steerLeft()" aria-label="गाडी डाव्या बाजूला वळवा">⬅️ डाव्या बाजूला वळा</button>
+            <button class="steer-btn" onclick="steerRight()" aria-label="गाडी उजव्या बाजूला वळवा">उजव्या बाजूला वळा ➡️</button>
+            
+            <button class="center-btn" onclick="steerCenter()" aria-label="गाडी मध्यभागी आणा">↔️ मध्यभागी (सेंटरमध्ये) या</button>
+
+            <button class="accel-btn" onclick="pressAccelerator()" aria-label="ॲक्सिलेटर दाबा, रेस वाढवा">⚡ ॲक्सिलेटर (रेस)</button>
+            <button class="horn-btn" onclick="pressHornManual()" aria-label="गाडीचा हॉर्न वाजवा">📢 स्पेशल हॉर्न</button>
+            
+            <button class="front-brake-btn" onclick="pressFrontBrake()" aria-label="पुढचा ब्रेक लावा">🛑 पुढचा ब्रेक</button>
+            <button class="rear-brake-btn" onclick="pressRearBrake()" aria-label="मागचा ब्रेक लावा">⚠️ मागचा ब्रेक</button>
+
+            <button class="breaker-btn" onclick="hitSpeedBreakerManual()" aria-label="स्पीड ब्रेकर पार करा">🚧 स्पीड ब्रेकर (खडक-खडक)</button>
+        </div>
+    </div>
+
+    <script>
+        let audioCtx = null;
+        let engineNoiseNode = null;
+        let isPlaying = false;
+        let score = 0;
+        let speed = 60;
+        let playerLane = 0; // -1: डावी, 0: मध्यम, 1: उजवी
+        let gameTimer = null;
+        let obstacleTimer = null;
+        let breakerTimer = null;
+
+        const laneNames = {
+            "-1": "डावी लेन",
+            "0": "मध्यम लेन",
+            "1": "उजवी लेन"
+        };
+
+        function speak(text) {
+            if (!('speechSynthesis' in window)) return;
+            window.speechSynthesis.cancel();
+            
+            const utter = new SpeechSynthesisUtterance(text);
+            utter.lang = 'mr-IN';
+            utter.rate = 1.1;
+            utter.pitch = 1.0;
+            window.speechSynthesis.speak(utter);
+        }
+
+        window.onload = function() {
+            setTimeout(() => {
+                speak("गोकुळ माळी आपले स्वागत आहे! गेम सुरू करण्यासाठी पिवळे बटण दाबा.");
+            }, 600);
+        };
+
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function startRealisticEngine() {
+            initAudio();
+            const bufferSize = 2 * audioCtx.sampleRate;
+            const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const output = noiseBuffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                output[i] = Math.random() * 2 - 1;
+            }
+
+            const whiteNoise = audioCtx.createBufferSource();
+            whiteNoise.buffer = noiseBuffer;
+            whiteNoise.loop = true;
+
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(80 + (speed * 1.5), audioCtx.currentTime);
+
+            const gain = audioCtx.createGain();
+            gain.gain.setValueAtTime(0.24, audioCtx.currentTime);
+
+            whiteNoise.connect(filter);
+            filter.connect(gain);
+            gain.connect(audioCtx.destination);
+            whiteNoise.start();
+            engineNoiseNode = { source: whiteNoise, filter: filter };
+        }
+
+        function playSuspensionThud() {
+            initAudio();
+            [0, 0.11].forEach((delay) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(95, audioCtx.currentTime + delay);
+                osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + delay + 0.09);
+
+                gain.gain.setValueAtTime(0.65, audioCtx.currentTime + delay);
+                gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + delay + 0.09);
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(audioCtx.currentTime + delay);
+                osc.stop(audioCtx.currentTime + delay + 0.09);
+            });
+
+            if (navigator.vibrate) navigator.vibrate([70, 40, 80]);
+        }
+
+        function hitSpeedBreakerManual() {
+            playSuspensionThud();
+            if (speed > 80) {
+                speed = Math.max(40, speed - 35);
+                updateHUD();
+                speak("खडक खडक! मोठा हादरा बसला! वेग कमी ठेवा.");
+            } else {
+                speak("स्पीड ब्रेकर पार केला.");
+            }
+        }
+
+        function pressAccelerator() {
+            if (!isPlaying) return;
+            speed = Math.min(180, speed + 15);
+            updateHUD();
+            if (engineNoiseNode) {
+                engineNoiseNode.filter.frequency.linearRampToValueAtTime(80 + (speed * 2), audioCtx.currentTime + 0.3);
+            }
+            if (navigator.vibrate) navigator.vibrate(60);
+            speak("रेस दिली, स्पीड वाढवला!");
+        }
+
+        function pressFrontBrake() {
+            if (!isPlaying) return;
+            speed = Math.max(30, speed - 30);
+            updateHUD();
+            playBrakeScreech();
+            speak("पुढचा ब्रेक लावला!");
+        }
+
+        function pressRearBrake() {
+            if (!isPlaying) return;
+            speed = Math.max(35, speed - 15);
+            updateHUD();
+            playBrakeScreech();
+            speak("मागचा ब्रेक लावला!");
+        }
+
+        function playBrakeScreech() {
+            initAudio();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(950, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(140, audioCtx.currentTime + 0.35);
+
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.35);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.35);
+
+            if (navigator.vibrate) navigator.vibrate([90, 40, 90]);
+        }
+
+        function pressHornManual() {
+            initAudio();
+            playDualHorn(0);
+            if (navigator.vibrate) navigator.vibrate(100);
+            speak("हॉर्न वाजवला!");
+        }
+
+        function playDualHorn(panVal) {
+            initAudio();
+            const panner = audioCtx.createStereoPanner ? audioCtx.createStereoPanner() : null;
+            const osc1 = audioCtx.createOscillator();
+            const osc2 = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc1.type = 'sawtooth';
+            osc2.type = 'triangle';
+            osc1.frequency.setValueAtTime(415, audioCtx.currentTime);
+            osc2.frequency.setValueAtTime(510, audioCtx.currentTime);
+
+            gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.45);
+
+            if (panner) {
+                panner.pan.setValueAtTime(panVal, audioCtx.currentTime);
+                osc1.connect(panner);
+                osc2.connect(panner);
+                panner.connect(gain);
+            } else {
+                osc1.connect(gain);
+                osc2.connect(gain);
+            }
+            gain.connect(audioCtx.destination);
+
+            osc1.start();
+            osc2.start();
+            osc1.stop(audioCtx.currentTime + 0.45);
+            osc2.stop(audioCtx.currentTime + 0.45);
+        }
+
+        function steerLeft() {
+            if (!isPlaying) return;
+            if (playerLane > -1) {
+                playerLane--;
+                updateHUD();
+                speak("गाडी डाव्या बाजूला वळवली! " + laneNames[playerLane]);
+            } else {
+                speak("रस्ता संपला, अधिक डावीकडे जाता येणार नाही!");
+            }
+            if (navigator.vibrate) navigator.vibrate(40);
+        }
+
+        function steerRight() {
+            if (!isPlaying) return;
+            if (playerLane < 1) {
+                playerLane++;
+                updateHUD();
+                speak("गाडी उजव्या बाजूला वळवली! " + laneNames[playerLane]);
+            } else {
+                speak("रस्ता संपला, अधिक उजवीकडे जाता येणार नाही!");
+            }
+            if (navigator.vibrate) navigator.vibrate(40);
+        }
+
+        function steerCenter() {
+            if (!isPlaying) return;
+            playerLane = 0;
+            updateHUD();
+            speak("गाडी मध्यभागी मध्यम लेनवर आणली!");
+            if (navigator.vibrate) navigator.vibrate(40);
+        }
+
+        function updateHUD() {
+            document.getElementById('lane-name').textContent = laneNames[playerLane];
+            document.getElementById('speed-meter').textContent = speed;
+        }
+
+        function toggleGame() {
+            initAudio();
+            const btn = document.getElementById('start-btn');
+            if (!isPlaying) {
+                isPlaying = true;
+                score = 0;
+                speed = 60;
+                playerLane = 0;
+                updateHUD();
+                btn.textContent = "गेम थांबवा";
+                document.getElementById('status').textContent = "गाडी रस्त्यावर धावत आहे...";
+                speak("रेसिंग सुरू झाली! लक्ष ठेवा.");
+                startRealisticEngine();
+                scheduleNextObstacle();
+                scheduleRandomBreaker();
+
+                gameTimer = setInterval(() => {
+                    if (!isPlaying) return;
+                    score += Math.floor(speed / 25);
+                    document.getElementById('score').textContent = score;
+                }, 1000);
+            } else {
+                stopGame("गेम थांबवला");
+            }
+        }
+
+        function scheduleRandomBreaker() {
+            if (!isPlaying) return;
+            breakerTimer = setTimeout(() => {
+                if (!isPlaying) return;
+                speak("सावधान! समोर स्पीड ब्रेकर येत आहे, ब्रेक दाबा!");
+                setTimeout(() => {
+                    if (!isPlaying) return;
+                    playSuspensionThud();
+                    if (speed > 85) {
+                        speak("खडक खडक! गाडी जोरात आदळली!");
+                    }
+                    scheduleRandomBreaker();
+                }, 2200);
+            }, 14000);
+        }
+
+        function scheduleNextObstacle() {
+            if (!isPlaying) return;
+            let timeGap = Math.max(2600, 5200 - (speed * 16));
+            obstacleTimer = setTimeout(() => {
+                if (!isPlaying) return;
+                runObstacleEvent();
+            }, timeGap);
+        }
+
+        function runObstacleEvent() {
+            const laneChoices = [-1, 0, 1];
+            const targetLane = laneChoices[Math.floor(Math.random() * laneChoices.length)];
+
+            let alertMsg = "";
+            let pan = 0;
+
+            if (targetLane === -1) {
+                alertMsg = "गाडी डावीकडून येत आहे, मध्यभागी किंवा उजवीकडे वळा!";
+                pan = -0.9;
+            } else if (targetLane === 1) {
+                alertMsg = "गाडी उजवीकडून येत आहे, मध्यभागी किंवा डावीकडे वळा!";
+                pan = 0.9;
+            } else {
+                alertMsg = "गाडी थेट समोरून मध्यम लेनवरून येत आहे, डावीकडे किंवा उजवीकडे वळा!";
+                pan = 0;
+            }
+
+            speak(alertMsg);
+            playDualHorn(pan);
+
+            setTimeout(() => {
+                if (!isPlaying) return;
+                if (playerLane === targetLane) {
+                    crash();
+                } else {
+                    speak("शाब्बास, छान वाचलात!");
+                    scheduleNextObstacle();
+                }
+            }, 2100);
+        }
+
+        function crash() {
+            if (navigator.vibrate) navigator.vibrate([250, 100, 250, 100, 500]);
+            speak("गाडी धडकली! अपघात झाला! गेम संपला. तुमचा स्कोअर " + score);
+            stopGame("अपघात झाला! गेम संपला.");
+        }
+
+        function stopGame(msg) {
+            isPlaying = false;
+            clearTimeout(obstacleTimer);
+            clearTimeout(breakerTimer);
+            clearInterval(gameTimer);
+            if (engineNoiseNode && engineNoiseNode.source) {
+                try { engineNoiseNode.source.stop(); } catch(e){}
+                engineNoiseNode = null;
+            }
+            document.getElementById('status').textContent = msg;
+            document.getElementById('start-btn').textContent = "पुन्हा खेळा";
+        }
+    </script>
+</body>
+</html>
+
